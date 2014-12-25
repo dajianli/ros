@@ -84,7 +84,7 @@ catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES gpio
    CATKIN_DEPENDS roscpp rospy std_msgs message_runtime
-#  DEPENDS system_lib
+   DEPENDS system_lib
 )
 
 ###########
@@ -103,9 +103,12 @@ include_directories(
 #   src/${PROJECT_NAME}/gpio.cpp
 # )
 
+include_directories(/usr/local/include)
+link_directories(/usr/local/lib)
+
 ## Declare a cpp executable
  add_executable(gpioExecute_node src/listener.cpp)
-
+ target_link_libraries(gpioExecute_node wiringPi)
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
  add_dependencies(gpioExecute_node gpio_generate_messages_cpp)
