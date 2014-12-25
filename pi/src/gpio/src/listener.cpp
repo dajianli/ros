@@ -2,7 +2,7 @@
 #include "std_msgs/String.h"
 #include <wiringPi.h>
 #include "gpio/pinMode.h"
- 
+
 
 /*
 void chatterCallback(const std_msgs::String::ConstPtr& msg)
