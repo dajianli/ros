@@ -48,7 +48,7 @@ find_package(catkin REQUIRED COMPONENTS
   add_message_files(
     FILES
     pinMode.msg
-#   Message2.msg
+    pinWrite.msg
   )
 
 ## Generate services in the 'srv' folder
