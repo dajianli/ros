@@ -41,16 +41,16 @@ int main(void)
 
   while(1){
     
-    for( pwm = 0; pwm = 100; pwm += 10 )
+    for( pwm = 0; pwm <= 100; pwm += 10 )
     {
 	forward(pwm);
-    	delay(500);
+    	delay(2000);
     }
 
-    for( pwm = 0; pwm = 100; pwm += 10 )
+    for( pwm = 0; pwm <= 100; pwm += 10 )
     {
 	backward(pwm);
-    	delay(500);
+    	delay(2000);
     }
   }
 
