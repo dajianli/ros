@@ -20,9 +20,10 @@
              var r = 200
              var bTouching = false;
              var save_x = 0
-             var save_y =0
+             var save_yDiv=0
 
 	     var Divisions = 4
+             var DivDelta = r / Divisions;
 
              cxt.beginPath();
              cxt.fillStyle="rgba(0, 255, 0, 0.5)";
@@ -82,10 +83,11 @@
                  var oInp = document.getElementById("spn");
                  oInp.innerHTML = '(' + x + ',' + y + ')'
                  if ( x * x + y * y < r * r )  {
-		     if( !bTouching || ( y*save_y==0  && y+save_y !=0) || ( y*save_y < 0) )
+		     var iDiv = Math.ceil( y / DivDelta );
+		     if( !bTouching || ( iDiv != save_yDiv ) )
 		     {
                      	$.post('/?x=' + x + '&y=' + y + '&r=' + r +'&division=' + Divisions)
-                     	save_y = y;
+                     	save_yDiv = iDiv;
                         bTouching = true;
                      }
                  }
