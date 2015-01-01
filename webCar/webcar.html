@@ -1,0 +1,129 @@
+﻿    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">  
+    <html xmlns="http://www.w3.org/1999/xhtml">  
+        <head>  
+            <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />  
+            <title>智能小车控制平台</title>  
+            <script type="text/javascript" src="/static/jquery-2.1.3.min.js"></script> 
+    </head>
+
+    <body>
+        <canvas id="cav_dir" width="400" height="400" style="background-color: #eeeeee">
+        您的浏览器不支持。
+        </canvas>
+        <span id="spn">hello</span>
+
+        <script type="text/javascript">
+         $(function(){
+             var c=document.getElementById("cav_dir");
+             var cxt=c.getContext("2d");
+
+             var r = 200
+             var bTouching = false;
+             var save_x = 0
+             var save_y =0
+
+	     var Divisions = 4
+
+             cxt.beginPath();
+             cxt.fillStyle="rgba(0, 255, 0, 0.5)";
+
+
+             cxt.arc(r, r, r, 0, Math.PI*2, false);
+             cxt.closePath();
+
+             cxt.lineWidth = 2
+             cxt.strokeStyle = 'rgba(255,0,0,0.5)';
+
+             cxt.moveTo(0, r - 1)
+             cxt.lineTo(2 * r, r - 1)
+/*
+             cxt.moveTo(r - 1, 0)
+             cxt.lineTo(r - 1, 2 * r)
+             cxt.stroke()
+*/
+
+	     for(var zone = 1; zone < Divisions; zone++ )
+             {
+                 var y = r / Divisions * zone;
+                 var x = Math.sqrt( Math.pow( r, 2 ) - Math.pow( r - y , 2 ) );
+                 x = r - x;
+                 cxt.moveTo(x, y);
+                 cxt.lineTo(2 * r - x, y);
+                 cxt.stroke()
+                 
+		 y = 2 * r - y;
+                 cxt.moveTo(x, y);
+                 cxt.lineTo(2 * r - x, y);
+                 cxt.stroke()
+             }
+
+	     for(var zone = 1; zone < Divisions; zone++ )
+             {
+		var x = r / Divisions * zone;
+		var y = Math.sqrt( Math.pow( r, 2 ) - Math.pow( r - x , 2 ) );
+		y = r - y;
+		cxt.moveTo(x, y);
+                cxt.lineTo(x, 2 * r - y);
+                cxt.stroke()
+  		
+		x = 2 * r -x;
+		cxt.moveTo(x, y);
+                cxt.lineTo(x, 2 * r - y);
+                cxt.stroke()
+		
+             }
+
+             cxt.fill();
+             function touchrun(event) {
+                 event = event || window.event
+                 event.preventDefault()
+                 var x = event.touches[0].clientX - r
+                 var y = r - event.touches[0].clientY;
+                 var oInp = document.getElementById("spn");
+                 oInp.innerHTML = '(' + x + ',' + y + ')'
+                 if ( x * x + y * y < r * r )  {
+		     if( !bTouching || ( y*save_y==0  && y+save_y !=0) || ( y*save_y < 0) )
+		     {
+                     	$.post('/?x=' + x + '&y=' + y + '&r=' + r +'&division=' + Divisions)
+                     	save_y = y;
+                        bTouching = true;
+                     }
+                 }
+             }
+
+	     function mouserun(event) {
+                 event = event || window.event
+                 event.preventDefault()
+                 var x = event.clientX - r
+                 var y = r - event.clientY;
+                 var oInp = document.getElementById("spn");
+                 oInp.innerHTML = '(' + x + ',' + y + ')'
+                 if (x * x + y * y < r * r && ( y * save_y  < 0)) {
+                     $.post('/?x=' + x + '&y=' + y + '&r=' + r +'&division=' + Divisions)
+                     save_y = y;
+                 }
+             }
+
+             function stop(event) {
+                 if(!bTouching)
+                    return;
+                 event = event || window.event
+                 event.preventDefault()
+                 $.post('?x=0&y=0&r=' + r +'&division=' + Divisions)
+                 save_y = 0
+                 bTouching = false;
+             }
+
+             c.addEventListener('touchstart',touchrun, false);
+             c.addEventListener('touchmove',touchrun, false);
+             c.addEventListener('touchend',stop, false);
+
+             //c.addEventListener('click', mouserun, false);
+             //c.addEventListener('mousedown', mouserun, false);
+             //c.addEventListener('mousemove', mouserun, false);
+             //c.addEventListener('mouseup', stop, false);
+         })
+            </script>
+  
+        </body>  
+    </html>  
