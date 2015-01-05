@@ -58,7 +58,8 @@ class FourWheel:
      sys.stdout.flush() 
   
 def wheelRotateRatio(xWheel):
-
+    #xWheel > 1 Turn right
+    #xWheel < -1 Turn left
     lRatio = 0
     rRatio = 0
     lReverse = 0
