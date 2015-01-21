@@ -1,0 +1,175 @@
+<?xml version="1.0"?>
+<robot name="sp1s">
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <box size="0.27 .15 .003"/>
+      </geometry>
+      <material name="white">
+         <color rgba="1 1 1 .5"/>
+    </material>
+    </visual>
+  </link>
+  
+  <link name="tyer_front_left">
+    <visual>
+      <geometry>
+       <cylinder length=".025" radius="0.034"></cylinder>
+      </geometry>
+      <material name="yellow">
+          <color rgba="1 1 0 1"/>
+      </material>  
+    </visual>
+  </link>
+
+  <link name="tyer_front_right">
+    <visual>
+      <geometry>
+       <cylinder length=".025" radius="0.034"></cylinder>
+      </geometry>
+      <material name="yellow">  
+          <color rgba="1 1 0 1"/>  
+      </material>  
+    </visual>
+  </link>
+  
+  <link name="tyer_back_left">
+    <visual>
+      <geometry>
+       <cylinder length=".025" radius="0.034"></cylinder>
+      </geometry>
+      <material name="yellow">  
+          <color rgba="1 1 0 1"/>  
+      </material>  
+    </visual>
+  </link>
+  
+  <link name="tyer_back_right">
+    <visual>
+      <geometry>
+       <cylinder length=".025" radius="0.034"></cylinder>
+      </geometry>
+      <material name="yellow">  
+          <color rgba="1 1 0 1"/>  
+      </material>  
+    </visual>
+  </link>
+  
+  <joint name="base_to_front_left" type="continuous">
+    <origin rpy="1.57075  0  0" xyz="0.06  0.064  -0.011"/>
+    <parent link="base_link"/>
+    <child link="tyer_front_left"/>    
+    <axis xyz="0 0 1"/>
+  </joint>
+
+  <joint name="base_to_front_right" type="continuous">
+    <origin rpy="1.57075  0  0" xyz="0.06  -0.064  -0.011"/>
+    <parent link="base_link"/>
+    <child link="tyer_front_right"/>    
+    <axis xyz="0 0 1"/>
+  </joint>
+
+  <joint name="base_to_back_left" type="continuous">
+    <origin rpy="1.57075  0  0" xyz="-0.06  0.064  -0.011"/>
+    <parent link="base_link"/>
+    <child link="tyer_back_left"/>    
+    <axis xyz="0 0 1"/>
+  </joint>
+
+  <joint name="base_to_back_right" type="continuous">
+    <origin rpy="1.57075  0  0" xyz="-0.06  -0.064  -0.011"/>
+    <parent link="base_link"/>
+    <child link="tyer_back_right"/>    
+    <axis xyz="0 0 1"/>
+  </joint>
+
+  <link name="pillar_front_left">
+    <visual>
+      <geometry>
+       <cylinder length=".03" radius="0.0025"></cylinder>
+      </geometry>
+      <origin xyz="0 0 0.015"/>  
+      <material name="silver">  
+          <color rgba=".86 .86 .86 1"/>  
+      </material>
+    </visual>
+  </link>
+
+  <link name="pillar_front_right">
+    <visual>
+      <geometry>
+       <cylinder length=".03" radius="0.0025"></cylinder>
+      </geometry>
+      <origin xyz="0 0 0.015"/>  
+      <material name="silver">  
+          <color rgba=".86 .86 .86 1"/>  
+      </material>
+    </visual>
+  </link>
+
+  <link name="pillar_back_left">
+    <visual>
+      <geometry>
+       <cylinder length=".03" radius="0.0025"></cylinder>
+      </geometry>
+      <origin xyz="0 0 0.015"/>  
+      <material name="silver">  
+          <color rgba=".86 .86 .86 1"/>  
+      </material>
+    </visual>
+  </link>
+
+  <link name="pillar_back_right">
+    <visual>
+      <geometry>
+       <cylinder length=".03" radius="0.0025"></cylinder>
+      </geometry>
+      <origin xyz="0 0 0.015"/>  
+      <material name="silver">  
+          <color rgba=".86 .86 .86 1"/>  
+      </material>
+    </visual>
+  </link>
+
+  <joint name="base_to_pillar_front_left" type="fixed">
+    <origin xyz="0.13  0.07  0.0015"/>
+    <parent link="base_link"/>
+    <child link="pillar_front_left"/>
+  </joint>
+
+  <joint name="base_to_pillar_front_right" type="fixed">
+    <origin xyz="-0.13  0.07  0.0015"/>
+    <parent link="base_link"/>
+    <child link="pillar_front_right"/>
+  </joint>
+
+  <joint name="base_to_pillar_back_left" type="fixed">
+    <origin xyz="0.13  -0.07  0.0015"/>
+    <parent link="base_link"/>
+    <child link="pillar_back_left"/>
+  </joint>
+
+  <joint name="base_to_pillar_back_right" type="fixed">
+    <origin xyz="-0.13  -0.07  0.0015"/>
+    <parent link="base_link"/>
+    <child link="pillar_back_right"/>
+  </joint>
+
+  <link name="top_link">
+    <visual>
+      <geometry>
+        <box size="0.27 .15 .003"/>
+      </geometry>
+      <material name="white">
+         <color rgba="1 1 1 .5"/>
+    </material>
+    </visual>
+  </link>
+
+  <joint name="base_to_top" type="fixed">
+    <origin xyz="0  0  0.03"/>
+    <parent link="base_link"/>
+    <child link="top_link"/>
+  </joint>
+</robot>
+
