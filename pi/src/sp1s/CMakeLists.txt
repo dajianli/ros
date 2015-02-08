@@ -9,6 +9,10 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   message_generation
+  tf
+  nav_msgs
+  geometry_msgs 
+  control_toolbox
 # urdf
 )
 
@@ -49,14 +53,16 @@ find_package(catkin REQUIRED COMPONENTS
   add_message_files(
     FILES
     velocity.msg
+    runvelocity.msg
+    wheels_dir.msg
   )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+  add_service_files(
+    FILES
+    angula_velocity.srv
+    heading_radian.srv
+ )
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -83,7 +89,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES sp1s
-   CATKIN_DEPENDS roscpp rospy std_msgs urdf message_runtime
+   CATKIN_DEPENDS roscpp rospy std_msgs tf nav_msgs geometry_msgs urdf message_runtime control_toolbox
    DEPENDS system_lib
 )
 
@@ -107,14 +113,29 @@ include_directories(/usr/local/include)
 link_directories(/usr/local/lib)
 
 ## Declare a cpp executable
-  add_executable(basecontrol_slave src/basecontrol_slave.cpp)
-  target_link_libraries(basecontrol_slave wiringPi)
+  add_executable(basecontrol_master src/basecontrol_master.cpp)  
+  add_executable(odom_publisher src/odom_publisher.cpp)
+  add_executable(pwm2vel_report src/pwm2vel_report.cpp)  
+  target_link_libraries(pwm2vel_report wiringPi)
+  add_executable(base_control src/base_control.cpp)
+  target_link_libraries(base_control wiringPi)
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-  add_dependencies(basecontrol_slave sp1s_generate_messages_cpp)
+  add_dependencies(basecontrol_master sp1s_generate_messages_cpp)
+  add_dependencies(odom_publisher sp1s_generate_messages_cpp)
+  add_dependencies(base_control  sp1s_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-  target_link_libraries(basecontrol_slave
+  target_link_libraries(basecontrol_master
+    ${catkin_LIBRARIES}
+  ) 
+  target_link_libraries(odom_publisher
+    ${catkin_LIBRARIES}
+  )
+  target_link_libraries(pwm2vel_report
+    ${catkin_LIBRARIES}
+  )
+  target_link_libraries(base_control
     ${catkin_LIBRARIES}
   )
 
@@ -157,11 +178,4 @@ link_directories(/usr/local/lib)
 ## Testing ##
 #############
 
-## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_sp1s.cpp)
-# if(TARGET ${PROJECT_NAME}-test)
-#   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
-# endif()
-
-## Add folders to be run by python nosetests
-# catkin_add_nosetests(test)
+## Add gtest based cpp test target and link lib
