@@ -1,0 +1,9 @@
+<launch>
+    <param name="left_forward" value="1"/>
+    <param name="left_backward" value="4"/>
+    <param name="right_forward" value="6"/>
+    <param name="right_backward" value="5"/>
+    <param name="left_vel_pin" value="28"/>
+    <param name="right_vel_pin" value="29"/>
+    <node name="pwm2vel_report" pkg="sp1s" type="pwm2vel_report"  output="screen" />
+</launch>

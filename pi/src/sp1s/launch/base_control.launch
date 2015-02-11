@@ -1,0 +1,19 @@
+<launch>
+    <arg name="remote" default="True" />
+    <param name="left_forward" value="1"/>
+    <param name="left_backward" value="4"/>
+    <param name="right_forward" value="6"/>
+    <param name="right_backward" value="5"/>
+    <param name="left_vel_pin" value="28"/>
+    <param name="right_vel_pin" value="29"/>
+    <param name="left_vel2ang_ratio"  value="1.7"/>
+    <param name="right_vel2ang_ratio"  value="1.7"/>
+    <param name="p" type="double" value="60.0"/>
+    <param name="i" type="double" value="30.5"/>
+    <param name="d" type="double" value="0.0"/>
+    <param name="i_clamp_min" type="double" value="20.0"/>
+    <param name="i_clamp_max" type="double" value="70.0"/>    
+    <param name="remote" value="$(arg remote)"/>    
+    <node name="base_control" pkg="sp1s" type="base_control" output="screen" />
+    <node name="remote" pkg="sp1s" type="remote" output="screen" />
+</launch>

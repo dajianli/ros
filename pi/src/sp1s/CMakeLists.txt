@@ -113,7 +113,7 @@ include_directories(/usr/local/include)
 link_directories(/usr/local/lib)
 
 ## Declare a cpp executable
-  add_executable(basecontrol_master src/basecontrol_master.cpp)  
+#  add_executable(basecontrol_master src/basecontrol_master.cpp)  
   add_executable(odom_publisher src/odom_publisher.cpp)
   add_executable(pwm2vel_report src/pwm2vel_report.cpp)  
   target_link_libraries(pwm2vel_report wiringPi)
@@ -121,14 +121,14 @@ link_directories(/usr/local/lib)
   target_link_libraries(base_control wiringPi)
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-  add_dependencies(basecontrol_master sp1s_generate_messages_cpp)
+#  add_dependencies(basecontrol_master sp1s_generate_messages_cpp)
   add_dependencies(odom_publisher sp1s_generate_messages_cpp)
   add_dependencies(base_control  sp1s_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-  target_link_libraries(basecontrol_master
-    ${catkin_LIBRARIES}
-  ) 
+#  target_link_libraries(basecontrol_master
+#    ${catkin_LIBRARIES}
+#  ) 
   target_link_libraries(odom_publisher
     ${catkin_LIBRARIES}
   )
