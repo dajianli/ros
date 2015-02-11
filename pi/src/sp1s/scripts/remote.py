@@ -169,6 +169,10 @@ def webservice_thread():
 
 if __name__ == '__main__':
     rospy.init_node('remote', anonymous=True)
+    engaged = rospy.get_param('remote', True)
+    if engaged == False:
+      sys.exit(0) 
+
     wheels_dir_pub = rospy.Publisher('wheels_dir', wheels_dir, queue_size=10)    
     print os.getcwd()
 
