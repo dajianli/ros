@@ -5,13 +5,19 @@
 #include "veldetect.h"
 #include "wheelpwm.h"
 #include "sp1s/wheels_dir.h"
+#include "dbl_cmp.h"
 
-#define DBL_ERROR   0.000000001
+#define STARTUP_PWM 3
 
-// pwm = vel * dFactor + dOffset
-// the last velocity in arrVel come from pwm == 100
-// pwm step in arrVel is 10
-void computeFactorOffset(double* arrVel, long lSize,
+struct VelPwm{
+	double velLeft;
+	double velRight;
+	int    pwmLeft;
+	int    pwmRight;
+};
+
+// Y = X * dFactor + dOffset
+void computeFactorOffset(double* arrX, double* arrY, long lSize,
 		double& dFactor, double& dOffset, double& variance)
 {
 	// Compute the average dFactor from each pair of samples
@@ -21,33 +27,83 @@ void computeFactorOffset(double* arrVel, long lSize,
 	long length = 0;
 	for(long i=1;i< lSize; i++)
 	{
-		if(fabs(arrVel[i] - arrVel[i-1]) < DBL_ERROR
-				|| arrVel[i-1] < DBL_ERROR)
+		if (DBLCMPEQ(arrY[i],arrY[i - 1])
+			|| DBLCMPEQ(arrY[i - 1], 0))
 			continue;
-
-		dStepFactor = 10.0 / ( arrVel[i] - arrVel[i-1] );
+		double deltaY = arrY[i] - arrY[i-1];
+		double deltaX = arrX[i] - arrX[i-1];
+		dStepFactor = deltaY / deltaX;
 		arrFactor[length] = dStepFactor;
 		dSum += dStepFactor;
 		length++;
 	}
     double dAvg = dSum / length;
     dFactor = dAvg;
-    dOffset = 100.0 - arrVel[lSize - 1]*dFactor;
+    dOffset = arrY[lSize - 1] - arrX[lSize - 1]*dFactor;
 
     // compute variance
     variance = 0.0;
-    double dTargetPwm = 110.0;
-    double dComputeVel = 0.0;
-    for(long i=lSize - 1; i>= 0; i--)
+    for(long i=1;i< lSize; i++)
     {
-    	dTargetPwm -= 10.0;
-    	if(arrVel[i]< DBL_ERROR)
+	if (DBLCMPEQ(arrX[i], 0))
     		continue;
-    	dComputeVel = arrVel[i]*dFactor + dOffset;
-    	variance += pow(dComputeVel - dTargetPwm, 2 );
+    	double dComputeY = arrX[i]*dFactor + dOffset;
+    	variance += pow(dComputeY - arrY[i], 2 );
     }
-	delete[] arrFactor;
+    delete[] arrFactor;
 }
+
+void GoBackAndForth(int leftPwm, int rightPwm, 
+	CWheelpwm *pLeftWheel, CWheelpwm *pRightWheel,
+	CVeldetect *pVelDetect, float distance,
+	VelPwm *pForwardResult, VelPwm *pBackwardResult)
+{
+	ros::Rate loop_rate(100);
+
+	// Go forward
+	pLeftWheel->forward(10);
+	pRightWheel->forward(10);
+	loop_rate.sleep();
+	
+	pLeftWheel->forward(leftPwm);
+	pRightWheel->forward(rightPwm);
+	pVelDetect->Reset();
+	while (DBLCMPLT(pVelDetect->distanceLeft(), distance)
+		|| DBLCMPLT(pVelDetect->distanceRight(), distance))
+	{
+		ros::spinOnce();
+		loop_rate.sleep();
+	}
+	//printf("Forward :%f   %f   \n", pVelDetect->distanceLeft(),pVelDetect->distanceRight());
+	pForwardResult->velLeft = pVelDetect->computeLeftVel();
+	pForwardResult->velRight = pVelDetect->computeRightVel();
+	pForwardResult->pwmLeft = leftPwm;
+	pForwardResult->pwmRight = rightPwm;
+
+	// Go backward
+	pLeftWheel->backward(10);
+	pRightWheel->backward(10);
+	loop_rate.sleep();
+	
+	pLeftWheel->backward(leftPwm);
+	pRightWheel->backward(rightPwm);
+	pVelDetect->Reset();
+	while (DBLCMPLT(pVelDetect->distanceLeft(), distance)
+		|| DBLCMPLT(pVelDetect->distanceRight(), distance))
+	{
+		ros::spinOnce();
+		loop_rate.sleep();
+	}
+	//printf("Backward:%f   %f   \n", pVelDetect->distanceLeft(),pVelDetect->distanceRight());
+	pBackwardResult->velLeft = pVelDetect->computeLeftVel();
+	pBackwardResult->velRight = pVelDetect->computeRightVel();
+	pBackwardResult->pwmLeft = leftPwm;
+	pBackwardResult->pwmRight = rightPwm;
+
+	pLeftWheel->forward(0);
+	pRightWheel->forward(0);
+}
+
 
 int main(int argc, char **argv)
 {
@@ -70,12 +126,7 @@ int main(int argc, char **argv)
     n.param("right_vel_pin", right_vel_pin, 29);
     CVeldetect veldetect;
     veldetect.init( left_vel_pin, right_vel_pin );
-/*
-    ROS_INFO("left_forward %d", left_forward);
-    ROS_INFO("left_backward %d", left_backward);
-    ROS_INFO("right_forward %d", right_forward);
-    ROS_INFO("right_backward %d", right_backward);
-*/
+
     int vel_sampling_rate = 1;
     n.param("vel_sampling_rate", vel_sampling_rate, 1); 
     ros::Rate loop_rate(vel_sampling_rate);    
@@ -85,44 +136,47 @@ int main(int argc, char **argv)
     dir.left_forward = true;
     dir.right_forward = true;
     velDir_pub.publish(dir);
+	
+	VelPwm forwards[10], backwards[10]; 
+	int iStepPwm = 10 - STARTUP_PWM;
+	float DISTANCE = 1.0;
 
-    int last_pwm = 0;
-    left_pwm.forward(10);
-    right_pwm.forward(10);
-    ros::spinOnce();
-    loop_rate.sleep();
-    double arrLeftVel[10];
-    double arrRightVel[10];
-    long i = 0;
-
-    for(int pwm = 10; pwm <= 110; pwm += 10 )
-    {
-		if(last_pwm > 0)
-		{
-			double dLeftVel = veldetect.computeLeftVel();
-			double dRightVel = veldetect.computeRightVel();
-			ROS_INFO("Left Forword PWM: %d	velocity:%f", last_pwm, dLeftVel);
-			ROS_INFO("Right Forword PWM: %d	velocity:%f", last_pwm, dRightVel);
-			i++;
-			arrLeftVel[i] = dLeftVel;
-			arrRightVel[i] = dRightVel;
-		}
-		if(pwm > 100 )
-			  continue;
-		left_pwm.forward(pwm);
-		right_pwm.forward(pwm);
-		veldetect.Reset();
-		last_pwm = pwm;
-
-		ros::spinOnce();
-		loop_rate.sleep();
+	for (int i = 0; i < 10; i++)
+	{
+		int pwm = STARTUP_PWM * 10 + i*iStepPwm;
+		GoBackAndForth(pwm, pwm + 5, &left_pwm, &right_pwm,
+			&veldetect, DISTANCE, forwards + i, backwards + i);		
+		sleep(10);
     }
 
+	// stop it
+	left_pwm.forward(0);
+	right_pwm.forward(0);
+	
+	double arrVelLeftForward[10],arrVelLeftBackward[10],arrVelRightForward[10],arrVelRightBackward[10];
+        double arrPwmLeftForward[10],arrPwmLeftBackward[10],arrPwmRightForward[10],arrPwmRightBackward[10];
+	for (int row = 0; row < 10; row++)
+	{
+		printf("%d   %f   %d    %f    %d   %f   %d    %f", 
+			forwards[row].pwmLeft, forwards[row].velLeft, forwards[row].pwmRight, forwards[row].velRight,
+			backwards[row].pwmLeft, backwards[row].velLeft, backwards[row].pwmRight, backwards[row].velRight);
+		printf("\n");
+		arrVelLeftForward[row] = forwards[row].velLeft;
+		arrVelRightForward[row] = forwards[row].velRight;
+		arrVelLeftBackward[row] = backwards[row].velLeft;		
+		arrVelRightBackward[row] = backwards[row].velRight;
+		arrPwmLeftForward[row] = forwards[row].pwmLeft;		
+		arrPwmRightForward[row] = forwards[row].pwmRight;
+		arrPwmLeftBackward[row] = backwards[row].pwmLeft;
+		arrPwmRightBackward[row] = backwards[row].pwmRight;
+
+	}
+
     double dFactor,  dOffset,  variance;
-    computeFactorOffset(arrLeftVel+1,9,dFactor,dOffset,variance);
+    computeFactorOffset(arrVelLeftForward,arrPwmLeftForward,10,dFactor,dOffset,variance);
     ROS_INFO("Left Forward Factor: %f	Offset:%f	variance:%f ",
     		dFactor, dOffset, variance);
-    computeFactorOffset(arrRightVel+1,9,dFactor,dOffset,variance);
+    computeFactorOffset(arrVelRightForward,arrPwmRightForward,10,dFactor,dOffset,variance);
         ROS_INFO("Right Forward Factor: %f	Offset:%f	variance:%f ",
         		dFactor, dOffset, variance);
 
@@ -131,39 +185,12 @@ int main(int argc, char **argv)
     dir.right_forward = false;
     velDir_pub.publish(dir);
 
-    left_pwm.backward(10);
-    right_pwm.backward(10);
-    ros::spinOnce();
-    loop_rate.sleep();
-    last_pwm = 0;
-    i = 0;
-
-    for(int pwm = 10; pwm <= 110; pwm += 10 )
-    {	
-		if(last_pwm > 0)
-		{
-			double dLeftVel = veldetect.computeLeftVel();
-			double dRightVel = veldetect.computeRightVel();
-			ROS_INFO("Left Backward PWM: %d	velocity:%f", last_pwm, dLeftVel);
-			ROS_INFO("Right Backward PWM: %d	velocity:%f", last_pwm, dRightVel);
-			i++;
-			arrLeftVel[i] = dLeftVel;
-			arrRightVel[i] = dRightVel;
-		}
-		if(pwm > 100 )
-			  continue;
-        left_pwm.backward(pwm);
-        right_pwm.backward(pwm);
-        veldetect.Reset();
-        last_pwm = pwm;
-
-    	ros::spinOnce();
-    	loop_rate.sleep();
-    }
-    computeFactorOffset(arrLeftVel+1,9,dFactor,dOffset,variance);
-        ROS_INFO("Left Forward Factor: %f	Offset:%f	variance:%f ",
+   
+    computeFactorOffset(arrVelLeftBackward,arrPwmLeftBackward,10,dFactor,dOffset,variance);
+        ROS_INFO("Left backward Factor: %f	Offset:%f	variance:%f ",
         		dFactor, dOffset, variance);
-    computeFactorOffset(arrRightVel+1,9,dFactor,dOffset,variance);
-        ROS_INFO("Right Forward Factor: %f	Offset:%f	variance:%f ",
+    computeFactorOffset(arrVelRightBackward,arrPwmRightBackward,10,dFactor,dOffset,variance);
+        ROS_INFO("Right backward Factor: %f	Offset:%f	variance:%f ",
         		dFactor, dOffset, variance);
+
 }

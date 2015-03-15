@@ -3,8 +3,8 @@
 #include <wiringPi.h>
 #include <softPwm.h>
 #include <stdio.h>
+#include <math.h>
 
-#define PI 		3.1415926
 #define DIAMETER 	0.068
 #define HOLES_ON_WHEEL  20
 
@@ -28,6 +28,7 @@ public:
 		       fprintf (stderr, "Unable to setup ISR: %s\n", strerror (errno));
 		       return;
 		}
+		m_disPerHole = DIAMETER * M_PI / HOLES_ON_WHEEL;
 	}
         
         void Reset()
@@ -38,14 +39,24 @@ public:
 	}
 
 	// compute the linear velocity in unit 'm/s'
-	float computeLeftVel()
+	double computeLeftVel()
 	{
         	return computeVel(m_leftCounter);
 	}
 	
-	float computeRightVel()
+	double computeRightVel()
 	{
         	return computeVel(m_rightCounter);
+	}
+
+	double distanceLeft()
+	{
+		return computeDistance(m_leftCounter);
+	}
+
+	double distanceRight()
+	{
+		return computeDistance(m_rightCounter);
 	}
         
 private:
@@ -58,16 +69,24 @@ private:
 	}
 
 	// compute the linear velocity in unit 'm/s'
-	float computeVel(int counter)
+	double computeVel(int counter)
 	{
             m_current_time = ros::Time::now();
-	    double distance = counter * PI * DIAMETER / HOLES_ON_WHEEL;
+	    double distance = computeDistance(counter);
 	    double secs = (m_current_time - m_last_time).toSec();	    
 	    return distance / secs;
+	}
+
+	double computeDistance(int counter)
+	{
+		// div by 2 caused by the hardware issue, 
+		// both falling&rising would trigger the counter to increase
+		return (double)counter * m_disPerHole / 2;
 	}
 	// the event counter 
 	static volatile int m_leftCounter;
 	static volatile int m_rightCounter;
+	double m_disPerHole; 
 	ros::Time m_current_time;
 	ros::Time m_last_time;
 };
