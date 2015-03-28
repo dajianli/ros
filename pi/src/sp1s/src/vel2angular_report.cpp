@@ -24,7 +24,7 @@ void Sample_Linear_Angular_Velocity(
 {
 	AngularVelocity angularMeasure;
 
-	ros::Rate loop_rate(50);
+	ros::Rate loop_rate(100);
 	loop_rate.sleep();
 	double heading = pCompass->read_bearing();
 	angularMeasure.Start(heading);
@@ -70,13 +70,15 @@ int main(int argc, char **argv)
     veldetect.init( left_vel_pin, right_vel_pin );
 
     hmc5883l compass;
-    //compass.setOffset(-576, -832, 362);
-    CCompassCalibrate compassCalibrate(&left_pwm, &right_pwm, &veldetect);
+    compass.setOffset(-231, -666, -49854);
+    /*CCompassCalibrate compassCalibrate(&left_pwm, &right_pwm, &veldetect);
     compassCalibrate.Calibrate(&compass);
-
+    printf("compass_x_offset:%d		compass_y_offset:%d		compass_z_offset:%d	\n",
+    		compassCalibrate.m_x_offset,compassCalibrate.m_y_offset,compassCalibrate.m_z_offset);
+*/
 	VelocityPair sample;
 	VelocityPair samples[10][10];
-	int iRound = 0;
+	int iRound = -1;
 	int iStepPwm = (10 - STARTUP_PWM );
 
 	
@@ -88,8 +90,9 @@ int main(int argc, char **argv)
     iStartPwmRight += 8;
     int iStepPwmLeft = ( 100 - iStartPwmLeft ) / 9;
     int iStepPwmRight = ( 100 - iStartPwmRight ) / 9;
-
+	/*
     // Turn forward around left wheel	
+	iRound++;
 	for (int i = 0; i < 10; i++)
 	{
 		left_pwm.forward(0);
@@ -130,10 +133,10 @@ int main(int argc, char **argv)
 		Sample_Linear_Angular_Velocity(&left_pwm,  &right_pwm,
 			&veldetect, &compass, &sample);
 		samples[iRound][i] = sample;
-	}
+	}*/
 
-	int lower_co = 1;
-	int higher_co = 3;
+	double lower_co = 0;
+	double higher_co = 4;
 	int higher_start = 100 - 9 * higher_co;	
 	iStartPwmLeft -= 8;
     	iStartPwmRight -= 8;
@@ -193,7 +196,7 @@ int main(int argc, char **argv)
 			&veldetect, &compass, &sample);
 		samples[iRound][i] = sample;
 	}
-
+	/*
 	iStartPwmLeft += 8;
     	iStartPwmRight += 8;
 	// Self rotate clock wise
@@ -223,13 +226,13 @@ int main(int argc, char **argv)
 			&veldetect, &compass, &sample);
 		samples[iRound][i] = sample;
 	}
-	
+	*/
 	left_pwm.forward(0);
 	right_pwm.forward(0);
 
 	for (int row = 0; row < 10; row++)
 	{
-		for (int col = 0; col < 10; col++)
+		for (int col = 0; col <= iRound; col++)
 		{
 			sample = samples[col][row];
 		 	printf("%f  %f   ", fabs(sample.linear_left - sample.linear_right), sample.angular);

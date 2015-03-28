@@ -13,9 +13,11 @@ find_package(catkin REQUIRED COMPONENTS
   nav_msgs
   geometry_msgs 
   control_toolbox
+  roslib
 # urdf
 )
 
+find_package(GTest REQUIRED)
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -102,6 +104,7 @@ catkin_package(
 # include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
+  ${GTEST_INCLUDE_DIRS} # GTest Lib
 )
 
 ## Declare a cpp library
@@ -149,6 +152,10 @@ link_directories(/usr/local/lib)
   target_link_libraries(imu_publisher
     ${catkin_LIBRARIES}
   )
+
+#NEW: GTest Node
+  catkin_add_gtest(test_vectorpairfile gtest/test_vectorpairfile.cpp)
+  target_link_libraries(test_vectorpairfile ${catkin_LIBRARIES})
 
 #############
 ## Install ##

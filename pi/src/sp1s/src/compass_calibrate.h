@@ -13,6 +13,9 @@ public:
 		m_leftWheel = leftWheel;
 		m_rightWheel = rightWheel;
 		m_pLinearVel = pLinearVel;
+		m_x_offset = 0;
+		m_y_offset = 0;
+		m_z_offset = 0;
 	}
 	
 	void Calibrate(hmc5883l * compass)
@@ -51,11 +54,17 @@ public:
 			delay(10);
 			duration -= 10;
 		}
-		compass->setOffset( -(xMin + xMax)/2, -(yMin + yMax)/2, -(zMin + zMax)/2 );
+		m_x_offset = -(xMin + xMax)/2;
+		m_y_offset = -(yMin + yMax)/2;
+		m_z_offset = -(zMin + zMax)/2;
+		compass->setOffset( m_x_offset, m_y_offset, m_z_offset );
 		m_leftWheel->forward(0);
 		m_rightWheel->forward(0);
 		delay(500);
 	}
+	int m_x_offset;
+	int m_y_offset;
+	int m_z_offset;
 private:
 	CWheelpwm * m_leftWheel;
 	CWheelpwm * m_rightWheel;

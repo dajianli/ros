@@ -90,11 +90,11 @@ public:
 	}
 	
 	double read_bearing()
-        {
-        	//Read a bearing from the sensor assuming the sensor is level         
-        	read_raw_data();
+    {
+        //Read a bearing from the sensor assuming the sensor is level
+        read_raw_data();
 
-       	 	double bearing = atan2(read_scaled_y(), read_scaled_x());
+       	double bearing = atan2(read_scaled_y(), read_scaled_x());
 		if ( bearing < 0 )
 		    return bearing + (TWO_PI);
 		else
@@ -103,24 +103,23 @@ public:
 
 
 	// pitch roll : radian angle
-        double read_compensated_bearing(double pitch, double roll) 
-        {
-        	//Calculate a bearing taking in to account the current pitch and roll of the device as supplied as parameters
+    double read_compensated_bearing(double pitch, double roll)
+    {
+        //Calculate a bearing taking in to account the current pitch and roll of the device as supplied as parameters
         	
-        	read_raw_data();
-        	double cos_pitch = cos(pitch);
-        	double sin_pitch = sin(pitch);
+        read_raw_data();
+        double cos_pitch = cos(pitch);
+        double sin_pitch = sin(pitch);
         
-        	double cos_roll = cos(roll);
-        	double sin_roll = sin(roll);
+        double cos_roll = cos(roll);
+        double sin_roll = sin(roll);
     
-        	double Xh = (m_data.scaled_x * cos_pitch) + (m_data.scaled_z * sin_pitch);
-        	double Yh = (m_data.scaled_x * sin_pitch * sin_roll) + (m_data.scaled_y * cos_roll) - (m_data.scaled_z * sin_roll * cos_pitch);
+        double Xh = (m_data.scaled_x * cos_pitch) + (m_data.scaled_z * sin_pitch);
+        double Yh = (m_data.scaled_x * sin_pitch * sin_roll) + (m_data.scaled_y * cos_roll) - (m_data.scaled_z * sin_roll * cos_pitch);
         
-        	double bearing = atan2(Yh, Xh);
-		//if(Xh < 0 )
-		//    bearing += M_PI/2;
-        	if ( bearing < 0 )
+        double bearing = atan2(Yh, Xh);
+
+        if ( bearing < 0 )
 		    return bearing + (TWO_PI);
 		else
 		    return bearing;

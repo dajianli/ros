@@ -1,6 +1,7 @@
-// follow tutoral http://wiki.ros.org/navigation/Tutorials/RobotSetup/Odom
+// follow tutorial http://wiki.ros.org/navigation/Tutorials/RobotSetup/Odom
 
 #include "ros/ros.h"
+#include "ros/package.h"
 #include "std_msgs/String.h"
 #include <wiringPi.h>
 #include <sstream>
@@ -11,9 +12,11 @@
 #include "RunVelocity.h"
 #include "veldetect.h"
 #include "odom_publish.h"
+#include "util/vectorpairfile.h"
 
 boost::shared_ptr<RunVelocity> m_leftwheel;
 boost::shared_ptr<RunVelocity> m_rightwheel;
+boost::shared_ptr<vectorpairfile> m_vel2pwmPairfile;
 CVeldetect* m_pVeldetect;
 COdomPublish* m_odomPub;
 bool m_bleft_forward;
@@ -46,6 +49,7 @@ int main(int argc, char **argv)
 	ros::Subscriber cmd_vel_sub = n.subscribe("/cmd_vel", 10, cmd_vel_callback);
 	ros::Subscriber wheels_dir_sub = n.subscribe("/wheels_dir", 10, wheels_dir_callback);
 	wiringPiSetup();
+	std::string rootPath = ros::package::getPath("sp1s");
 
 	int left_forward, left_backward, right_forward, right_backward;
 	n.param("left_forward", left_forward, 1);
@@ -68,10 +72,31 @@ int main(int argc, char **argv)
 	n.param("remote", bRemoteControl, true);
 	if(!bRemoteControl)
 	{
-	//	RunVelocity leftwheel(n, left_forward, left_backward);
-	//	RunVelocity rightwheel(n, right_forward, right_backward);
-		m_leftwheel = boost::shared_ptr<RunVelocity>(new RunVelocity(n, left_forward, left_backward));
-		m_rightwheel = boost::shared_ptr<RunVelocity>(new RunVelocity(n, right_forward, right_backward));
+		boost::shared_ptr<vectorPair> leftforward_Vel2Pwm;
+		boost::shared_ptr<vectorPair> leftbackward_Vel2Pwm;
+		boost::shared_ptr<vectorPair> rightforward_Vel2Pwm;
+		boost::shared_ptr<vectorPair> rightbackward_Vel2Pwm;
+
+		std::string vel2pwmPath = rootPath;
+		vel2pwmPath.append("/calibration/cali_vel2pwm.txt");
+		m_vel2pwmPairfile = boost::shared_ptr<vectorpairfile>(new vectorpairfile);
+		if(!m_vel2pwmPairfile->loadfile(const_cast<char *>(vel2pwmPath.c_str()))
+				|| m_vel2pwmPairfile->PairCount()<4)
+			ROS_INFO(" failed to load '%s'",vel2pwmPath.c_str());
+		else
+		{
+			leftforward_Vel2Pwm = (*m_vel2pwmPairfile)[0];
+			leftbackward_Vel2Pwm = (*m_vel2pwmPairfile)[1];
+			rightforward_Vel2Pwm = (*m_vel2pwmPairfile)[2];
+			rightbackward_Vel2Pwm = (*m_vel2pwmPairfile)[3];
+		}
+
+		m_leftwheel = boost::shared_ptr<RunVelocity>(new RunVelocity(
+				n, left_forward, left_backward,leftforward_Vel2Pwm,leftbackward_Vel2Pwm));
+		m_rightwheel = boost::shared_ptr<RunVelocity>(new RunVelocity(
+				n, right_forward, right_backward,rightforward_Vel2Pwm,rightbackward_Vel2Pwm));
+
+
 		ROS_INFO("remote disabled, ready to run on /cmd_vel");
 	}
 
@@ -82,8 +107,18 @@ int main(int argc, char **argv)
 	veldetect.init(left_vel_pin, right_vel_pin);
 	m_pVeldetect = &veldetect;
 
+	// setup linear velocity to angular velocity map file
+	std::string vel2angularPath = rootPath;
+	vel2angularPath.append("/calibration/cali_vel2angular.txt");
+	boost::shared_ptr<vectorpairfile> vel2angularPairfile(new vectorpairfile);
+	if(!vel2angularPairfile->loadfile(const_cast<char *>(vel2angularPath.c_str()))
+			|| vel2angularPairfile->PairCount()<10)
+	{
+		ROS_INFO(" failed to load '%s'",vel2angularPath.c_str());
+		vel2angularPairfile.reset();
+	}
 	COdomPublish odomPub;
-	odomPub.Init(n);
+	odomPub.Init(n,vel2angularPairfile);
 	m_odomPub = &odomPub;
 
 	ros::Rate loop_rate(10);

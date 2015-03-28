@@ -158,8 +158,8 @@ int main(int argc, char **argv)
 	for (int row = 0; row < 10; row++)
 	{
 		printf("%d   %f   %d    %f    %d   %f   %d    %f", 
-			forwards[row].pwmLeft, forwards[row].velLeft, forwards[row].pwmRight, forwards[row].velRight,
-			backwards[row].pwmLeft, backwards[row].velLeft, backwards[row].pwmRight, backwards[row].velRight);
+			forwards[row].velLeft, forwards[row].pwmLeft, forwards[row].velRight, forwards[row].pwmRight, 
+			backwards[row].velLeft, backwards[row].pwmLeft, backwards[row].velRight,backwards[row].pwmRight);
 		printf("\n");
 		arrVelLeftForward[row] = forwards[row].velLeft;
 		arrVelRightForward[row] = forwards[row].velRight;

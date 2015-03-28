@@ -5,11 +5,14 @@
 #include "wheelpwm.h"
 #include "boost/shared_ptr.hpp"
 #include "sp1s/runvelocity.h"
+#include "util/vectorpairfile.h"
 
 class RunVelocity
 {
 public:
-	RunVelocity(ros::NodeHandle &n, int pinForward, int pinBackward)
+	RunVelocity(ros::NodeHandle &n, int pinForward, int pinBackward,
+		boost::shared_ptr<vectorPair> forwardPwm2Vel,
+		boost::shared_ptr<vectorPair> backwardPwm2Vel )
 	{
 		target_speed_ = 0.0;
 		pwm_command_ = 0;
@@ -22,6 +25,8 @@ public:
 			ROS_ERROR("MyController could not construct PID controller for RunVelocity");
 		}
  		m_bPidEngaged = false;
+		m_forwardPwm2Vel = forwardPwm2Vel;
+		m_backwardPwm2Vel = backwardPwm2Vel;
 	}
 
 	/*
@@ -65,7 +70,11 @@ public:
 	// -ve. backward
 	void RunSpeedCommand(double speed)
 		{
-			pwm_command_ = 30;
+			if(m_forwardPwm2Vel == NULL || m_backwardPwm2Vel == NULL)
+				pwm_command_ = 30;
+			else
+				pwm_command_ = speed > 0 ?
+					m_forwardPwm2Vel->X2Y(fabs(speed)) : m_backwardPwm2Vel->X2Y(fabs(speed));
 			pid_controller_.reset();
 			pid_controller_.setCurrentCmd((double)pwm_command_);
 			target_speed_ = speed;
@@ -93,7 +102,9 @@ private:
 	ros::Subscriber runvel_sub;
 	double target_speed_;
 	long pwm_command_;
-    bool m_bPidEngaged;
-    boost::shared_ptr<CWheelpwm> m_wheel;
+        bool m_bPidEngaged;
+        boost::shared_ptr<CWheelpwm> m_wheel;
+	boost::shared_ptr<vectorPair> m_forwardPwm2Vel;
+	boost::shared_ptr<vectorPair> m_backwardPwm2Vel;
 
 };
